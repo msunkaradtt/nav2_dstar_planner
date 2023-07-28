@@ -39,7 +39,6 @@ namespace nav2_dstar_planner{
         bool makePlan(const geometry_msgs::msg::Pose & start, const geometry_msgs::msg::Pose & goal,
         double tolerance, nav_msgs::msg::Path & plan);
 
-        bool computePotential(const geometry_msgs::msg::Point & world_point);
         bool getPlanFromPotential(const geometry_msgs::msg::Pose & goal, nav_msgs::msg::Path & plan);
 
         void smoothApproachToGoal(const geometry_msgs::msg::Pose & goal, nav_msgs::msg::Path & plan);
@@ -66,6 +65,9 @@ namespace nav2_dstar_planner{
         bool allow_unknown_, use_final_approach_orientation_;
         double tolerance_;
         rclcpp_lifecycle::LifecycleNode::WeakPtr node_;
+
+        rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr dyn_params_handler_;
+        rcl_interfaces::msg::SetParametersResult dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters);
     };
 }
 

@@ -2,3 +2,6 @@ turtlebot3/**
 nav2_straightline_planner/**
 .vscode
 utils/**
+fwd_bwd_rotation_shim_controller/**
+igo_gazebo_sim/**
+igo_nav2_sim/**

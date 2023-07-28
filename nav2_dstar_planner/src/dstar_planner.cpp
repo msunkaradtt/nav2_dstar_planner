@@ -58,11 +58,12 @@ namespace nav2_dstar_planner{
     void DstarPlanner::activate(){
         RCLCPP_INFO(logger_, "Activating plugin %s of type DstarPlanner", name_.c_str());
         auto node = node_.lock();
-
+        dyn_params_handler_ = node->add_on_set_parameters_callback(std::bind(&DstarPlanner::dynamicParametersCallback, this, _1));
     }
 
     void DstarPlanner::deactivate(){
         RCLCPP_INFO(logger_, "Cleaning up plugin %s of type DstarPlanner", name_.c_str());
+        dyn_params_handler_.reset();
     }
 
     void DstarPlanner::cleanup(){
@@ -328,6 +329,29 @@ namespace nav2_dstar_planner{
 
     void DstarPlanner::clearRobotCell(unsigned int mx, unsigned int my){
         costmap_->setCost(mx, my, nav2_costmap_2d::FREE_SPACE);
+    }
+
+    rcl_interfaces::msg::SetParametersResult DstarPlanner::dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters){
+        rcl_interfaces::msg::SetParametersResult result;
+        for (auto parameter : parameters) {
+            const auto & type = parameter.get_type();
+            const auto & name = parameter.get_name();
+
+            if (type == ParameterType::PARAMETER_DOUBLE) {
+                if (name == name_ + ".tolerance") {
+                    tolerance_ = parameter.as_double();
+                } 
+            } else if (type == ParameterType::PARAMETER_BOOL) {
+                if (name == name_ + ".allow_unknown") {
+                    allow_unknown_ = parameter.as_bool();
+                } else if (name == name_ + ".use_final_approach_orientation") {
+                    use_final_approach_orientation_ = parameter.as_bool();
+                }
+            }
+        }
+
+        result.successful = true;
+        return result;
     }
 } // namespace nav2_dstar_planner
 
