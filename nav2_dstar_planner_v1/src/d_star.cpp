@@ -6,7 +6,7 @@ namespace nav2_dstar_planner_v1{
 
     DStar::DStar(int xs, int ys){
         setNavArr(xs, ys);
-        factor_ = 0.75;
+        factor_ = OBSTACLE_FACTOR;
         lethal_cost_ = COST_OBS;
     }
 

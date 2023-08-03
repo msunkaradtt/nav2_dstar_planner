@@ -158,9 +158,7 @@ namespace nav2_dstar_planner_v1{
 
         bool path_found = false;
 
-        path_found = planner_->plan(costmap_->getCharMap(), start_node, goal_node, path, expand);        
-
-        RCLCPP_INFO(logger_, "%d DStar", path.size());
+        path_found = planner_->plan(costmap_->getCharMap(), start_node, goal_node, path, expand);
 
         if(path_found){
             if(_getPlanFromPath(path, plan)){

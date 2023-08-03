@@ -9,16 +9,8 @@
 #include "nav2_dstar_planner_v1/nodes.hpp"
 
 namespace nav2_dstar_planner_v1{
-    #define COST_UNKNOWN_ROS 255
     #define COST_OBS 254
-    #define COST_OBS_ROS 253
-
-    #define COST_NEUTRAL 50
-    #define COST_FACTOR 0.8
-
-    #ifndef COSTTYPE
-    #define COSTTYPE unsigned char
-    #endif
+    #define OBSTACLE_FACTOR 0.75
 
     #define WINDOW_SIZE 70
 
