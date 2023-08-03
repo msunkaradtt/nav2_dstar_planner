@@ -1,0 +1,5 @@
+<library path="nav2_dstar_planner_v1">
+        <class name="nav2_dstar_planner_v1/DStarPlannerV1" type="nav2_dstar_planner_v1::DStarPlannerV1" base_class_type="nav2_core::GlobalPlanner">
+          <description></description>
+        </class>
+</library>
