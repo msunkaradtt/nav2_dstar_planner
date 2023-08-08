@@ -124,12 +124,6 @@ namespace nav2_dstar_planner_v1{
 
         clearRobotCell(mx, my);
 
-        /*std::unique_lock<nav2_costmap_2d::Costmap2D::mutex_t> lock(*(costmap_->getMutex()));
-
-        planner_->setNavArr(costmap_->getSizeInCellsX(), costmap_->getSizeInCellsY());
-        
-        lock.unlock();*/
-
         int map_start[2];
         map_start[0] = mx;
         map_start[1] = my;
@@ -139,19 +133,12 @@ namespace nav2_dstar_planner_v1{
 
         worldToMap(wx, wy, mx, my);
 
-        RCLCPP_INFO(logger_, "%d, %d DStar", mx, my);
         int map_goal[2];
         map_goal[0] = mx;
         map_goal[1] = my;
 
-        int g_start_x, g_start_y, g_goal_x, g_goal_y;
-        planner_->map2Grid(map_start[0], map_start[1], g_start_x, g_start_y);
-        planner_->map2Grid(map_goal[0], map_goal[1], g_goal_x, g_goal_y);
-
-        //RCLCPP_INFO(logger_, "%d, %d DStar", g_goal_x, g_goal_y);
-
-        nav2_dstar_planner_v1::Node start_node(g_start_x, g_start_y, 0, 0, planner_->grid2Index(g_start_x, g_start_y), 0);
-        nav2_dstar_planner_v1::Node goal_node(g_goal_x, g_goal_y, 0, 0, planner_->grid2Index(g_goal_x, g_goal_y), 0);
+        nav2_dstar_planner_v1::Node start_node(map_start[0], map_start[1], 0, 0, planner_->grid2Index(map_start[0], map_start[1]), 0);
+        nav2_dstar_planner_v1::Node goal_node(map_goal[0], map_goal[1], 0, 0, planner_->grid2Index(map_goal[0], map_goal[1]), 0);
 
         std::vector<nav2_dstar_planner_v1::Node> path;
         std::vector<nav2_dstar_planner_v1::Node> expand;

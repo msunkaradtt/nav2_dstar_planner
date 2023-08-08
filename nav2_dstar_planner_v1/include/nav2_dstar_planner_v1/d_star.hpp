@@ -10,9 +10,9 @@
 
 namespace nav2_dstar_planner_v1{
     #define COST_OBS 254
-    #define OBSTACLE_FACTOR 0.75
+    #define OBSTACLE_FACTOR 0.7
 
-    #define WINDOW_SIZE 70
+    #define WINDOW_SIZE 60
 
     typedef DNode* DNodePtr;
 
@@ -53,7 +53,7 @@ namespace nav2_dstar_planner_v1{
 
         int grid2Index(int x, int y);
         void index2Grid(int i, int& x, int& y);
-        void map2Grid(double mx, double my, int& gx, int& gy);
+
         void reset();
     };
 }

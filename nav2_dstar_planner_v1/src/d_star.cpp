@@ -169,6 +169,7 @@ namespace nav2_dstar_planner_v1{
             }
         } else {
             for (DNodePtr y : neigbours){
+                
                 if (y->t_ == DNode::NEW || ((y->pid_ == x->id_) && (y->g_ != x->g_ + getCost(x, y)))){
                     y->pid_ = x->id_;
                     insert(y, x->g_ + getCost(x, y));
@@ -214,11 +215,15 @@ namespace nav2_dstar_planner_v1{
 
             return true;
         } else {
-            Node state = getState(start);   
+            
+            Node state = getState(start);
+            
             for (int i = -WINDOW_SIZE / 2; i < WINDOW_SIZE / 2; i++){
                 for (int j = -WINDOW_SIZE / 2; j < WINDOW_SIZE / 2; j++){
+
                     int x_n = state.x_ + i; 
                     int y_n = state.y_ + j;
+
                     if (x_n < 0 || x_n > nx - 1 || y_n < 0 || y_n > ny - 1){
                         continue;
                     }
@@ -235,34 +240,28 @@ namespace nav2_dstar_planner_v1{
                         }
                     }
                 }
-
-                DNodePtr x = map_[state.x_][state.y_];
-                while (1){
-                    double k_min = processState();
-                    if (k_min >= x->g_ || k_min == -1){
-                        break;
-                    }
-                }
-
-                path_.clear();
-                extractPath(state, goal);
-
-                expand = expand_;
-                path = path_;
-
-                return true;
             }
-        }
+            
+            DNodePtr x = map_[state.x_][state.y_];
+            while (1){
+                double k_min = processState();
+                if (k_min >= x->g_ || k_min == -1){
+                    break;
+                }
+            }
 
+            path_.clear();
+            extractPath(state, goal);
+
+            expand = expand_;
+            path = path_;
+
+            return true;
+        }
     }
 
     int DStar::grid2Index(int x, int y){
         return x + nx * y;
-    }
-
-    void DStar::map2Grid(double mx, double my, int& gx, int& gy){
-        gx = (int)mx;
-        gy = (int)my;
     }
 
     void DStar::index2Grid(int i, int& x, int& y){
