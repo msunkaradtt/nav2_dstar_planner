@@ -9,10 +9,10 @@
 #include "nav2_dstar_planner_v1/nodes.hpp"
 
 namespace nav2_dstar_planner_v1{
-    #define COST_OBS 254
-    #define OBSTACLE_FACTOR 0.7
+    #define COST_OBS 253
+    #define OBSTACLE_FACTOR 0.5
 
-    #define WINDOW_SIZE 60
+    #define WINDOW_SIZE 200
 
     typedef DNode* DNodePtr;
 

@@ -1,8 +1,11 @@
 #include <cmath>
 #include <string>
 #include <memory>
+#include <iterator> 
+
 #include "nav2_util/node_utils.hpp"
 
+#include "cubic_spline_planner/cubic_spline_interpolator.hpp"
 #include "cubic_spline_planner/cubicspline_planner.hpp"
 
 namespace cubic_spline_planner{
@@ -12,7 +15,42 @@ namespace cubic_spline_planner{
         tf_ = tf;
         costmap_ = costmap_ros->getCostmap();
         global_frame_ = costmap_ros->getGlobalFrameID();
-        
+
+        pointsPerUnity = 5;
+        skipPoints = 1;
+        useEndConditions = true;
+        useMiddleConditions = false;
+
+        cubic_spline_planner::UserPoses a;
+        a.x = 22.0;
+        a.y = 7.0;
+        a.yaw = 135.0;
+        poseList.push_back(a);
+        a.x = 20.5;
+        a.y = 5.0;
+        a.yaw = -180.0;
+        poseList.push_back(a);
+        a.x = 18.0;
+        a.y = 5.0;
+        a.yaw = -180.0;
+        poseList.push_back(a);
+        a.x = 18.0;
+        a.y = 5.0;
+        a.yaw = -180.0;
+        poseList.push_back(a);
+        a.x = -18.0;
+        a.y = 5.0;
+        a.yaw = -180.0;
+        poseList.push_back(a);
+        a.x = -20.5;
+        a.y = 5.0;
+        a.yaw = -180.0;
+        poseList.push_back(a);
+        a.x = -22.0;
+        a.y = 7.0;
+        a.yaw = 45.0;
+        poseList.push_back(a);
+
         // Parameter initialization
         nav2_util::declare_parameter_if_not_declared(node_, name_ + ".interpolation_resolution", rclcpp::ParameterValue(0.1));
         node_->get_parameter(name_ + ".interpolation_resolution", interpolation_resolution_);
@@ -21,71 +59,60 @@ namespace cubic_spline_planner{
     void CubicSplinePlanner::cleanup()
     {
         RCLCPP_INFO(
-            node_->get_logger(), "CleaningUp plugin %s of type NavfnPlanner",
+            node_->get_logger(), "CleaningUp plugin %s of type CubicSplinePlanner",
             name_.c_str());
     }
 
     void CubicSplinePlanner::activate()
     {
         RCLCPP_INFO(
-            node_->get_logger(), "Activating plugin %s of type NavfnPlanner",
+            node_->get_logger(), "Activating plugin %s of type CubicSplinePlanner",
             name_.c_str());
     }
 
     void CubicSplinePlanner::deactivate()
     {
         RCLCPP_INFO(
-            node_->get_logger(), "Deactivating plugin %s of type NavfnPlanner",
+            node_->get_logger(), "Deactivating plugin %s of type CubicSplinePlanner",
             name_.c_str());
+    }
+
+    auto CubicSplinePlanner::createQuaternionMsgFromYaw(double yaw){
+        tf2::Quaternion q;
+        q.setRPY(0, 0, yaw);
+        return tf2::toMsg(q);
     }
 
     nav_msgs::msg::Path CubicSplinePlanner::createPlan(const geometry_msgs::msg::PoseStamped & start, const geometry_msgs::msg::PoseStamped & goal)
     {
-        nav_msgs::msg::Path global_path;
-        
-        // Checking if the goal and start state is in the global frame
-        if (start.header.frame_id != global_frame_) {
-            RCLCPP_ERROR(
-                node_->get_logger(), "Planner will only except start position from %s frame",
-                global_frame_.c_str());
-            return global_path;
-        }
-        
-        if (goal.header.frame_id != global_frame_) {
-            RCLCPP_INFO(
-                node_->get_logger(), "Planner will only except goal position from %s frame",
-                global_frame_.c_str());
-            return global_path;
-        }
+        nav_msgs::msg::Path path, smoothedPath;
 
-        global_path.poses.clear();
-        global_path.header.stamp = node_->now();
-        global_path.header.frame_id = global_frame_;
-        // calculating the number of loops for current value of interpolation_resolution_
-        int total_number_of_loop = std::hypot(goal.pose.position.x - start.pose.position.x, goal.pose.position.y - start.pose.position.y) / interpolation_resolution_;
-        double x_increment = (goal.pose.position.x - start.pose.position.x) / total_number_of_loop;
-        double y_increment = (goal.pose.position.y - start.pose.position.y) / total_number_of_loop;
+        path.poses.clear();
+        path.header.stamp = node_->now();
+        path.header.frame_id = global_frame_;
 
-        for (int i = 0; i < total_number_of_loop; ++i) {
-            geometry_msgs::msg::PoseStamped pose;
-            pose.pose.position.x = start.pose.position.x + x_increment * i;
-            pose.pose.position.y = start.pose.position.y + y_increment * i;
-            pose.pose.position.z = 0.0;
-            pose.pose.orientation.x = 0.0;
-            pose.pose.orientation.y = 0.0;
-            pose.pose.orientation.z = 0.0;
-            pose.pose.orientation.w = 1.0;
-            pose.header.stamp = node_->now();
-            pose.header.frame_id = global_frame_;
-            global_path.poses.push_back(pose);
+        smoothedPath.header.stamp = node_->now();
+        smoothedPath.header.frame_id = global_frame_;
+
+        geometry_msgs::msg::PoseStamped pose_;
+
+        cubic_spline_planner::CubicSplineInterpolator csi(pointsPerUnity, skipPoints, useEndConditions, useMiddleConditions);
+
+        for(UserPoses po : poseList){
+            pose_.header.stamp = node_->now();
+            pose_.header.frame_id = global_frame_;
+
+            pose_.pose.position.x = static_cast<double>(po.x);
+            pose_.pose.position.y = static_cast<double>(po.y);
+            pose_.pose.position.z = 0.0;
+            pose_.pose.orientation = createQuaternionMsgFromYaw(po.yaw);
+            path.poses.push_back(pose_);
         }
 
-        geometry_msgs::msg::PoseStamped goal_pose = goal;
-        goal_pose.header.stamp = node_->now();
-        goal_pose.header.frame_id = global_frame_;
-        global_path.poses.push_back(goal_pose);
+        csi.interpolatePath(path, smoothedPath);
 
-        return global_path;
+
+        return smoothedPath;
     }
 }
 
