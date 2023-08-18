@@ -95,6 +95,7 @@ namespace nav2_dstar_planner_v1{
     }
 
     bool DStar::isCollision(DNodePtr n1, DNodePtr n2){
+        
         return curr_global_costmap_[n1->id_] > lethal_cost_ * factor_ || curr_global_costmap_[n2->id_] > lethal_cost_ * factor_;
     }
 

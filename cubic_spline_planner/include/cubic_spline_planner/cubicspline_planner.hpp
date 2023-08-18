@@ -15,13 +15,10 @@
 #include "nav2_util/lifecycle_node.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
 
+#include "cubic_spline_planner/spline.hpp"
+
 
 namespace cubic_spline_planner{
-    struct UserPoses{
-        double x;
-        double y;
-        double yaw;
-    };
     class CubicSplinePlanner : public nav2_core::GlobalPlanner{
         public:
         CubicSplinePlanner() = default;
@@ -32,8 +29,6 @@ namespace cubic_spline_planner{
         virtual void cleanup();
         virtual void activate();
         virtual void deactivate();
-
-        auto createQuaternionMsgFromYaw(double yaw);
 
         virtual nav_msgs::msg::Path createPlan(const geometry_msgs::msg::PoseStamped & start, const geometry_msgs::msg::PoseStamped & goal);
 
@@ -46,10 +41,14 @@ namespace cubic_spline_planner{
 
         double interpolation_resolution_;
 
-        int pointsPerUnity, skipPoints;
-        bool useEndConditions, useMiddleConditions;
+        /*std::vector<glm::vec3> Uspoints;
+        std::vector<glm::vec3> Ustangents_in;
+        std::vector<glm::vec3> Ustangents_out;*/
 
-        std::vector<cubic_spline_planner::UserPoses> poseList;
+        std::vector<double> xs = {22.0, 20.0, 18.0, 16.0, 14.0};
+        std::vector<double> ys = {7.0, 7.0, 7.0, 7.0, 7.0};
+        int count;
+        bool pathGenerated;
     };
 }
 

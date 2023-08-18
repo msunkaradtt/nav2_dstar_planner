@@ -5,7 +5,6 @@
 
 #include "nav2_util/node_utils.hpp"
 
-#include "cubic_spline_planner/cubic_spline_interpolator.hpp"
 #include "cubic_spline_planner/cubicspline_planner.hpp"
 
 namespace cubic_spline_planner{
@@ -16,40 +15,30 @@ namespace cubic_spline_planner{
         costmap_ = costmap_ros->getCostmap();
         global_frame_ = costmap_ros->getGlobalFrameID();
 
-        pointsPerUnity = 5;
-        skipPoints = 1;
-        useEndConditions = true;
-        useMiddleConditions = false;
+        count = 25;
 
-        cubic_spline_planner::UserPoses a;
-        a.x = 22.0;
-        a.y = 7.0;
-        a.yaw = 135.0;
-        poseList.push_back(a);
-        a.x = 20.5;
-        a.y = 5.0;
-        a.yaw = -180.0;
-        poseList.push_back(a);
-        a.x = 18.0;
-        a.y = 5.0;
-        a.yaw = -180.0;
-        poseList.push_back(a);
-        a.x = 18.0;
-        a.y = 5.0;
-        a.yaw = -180.0;
-        poseList.push_back(a);
-        a.x = -18.0;
-        a.y = 5.0;
-        a.yaw = -180.0;
-        poseList.push_back(a);
-        a.x = -20.5;
-        a.y = 5.0;
-        a.yaw = -180.0;
-        poseList.push_back(a);
-        a.x = -22.0;
-        a.y = 7.0;
-        a.yaw = 45.0;
-        poseList.push_back(a);
+        pathGenerated = false;
+
+        /*Uspoints.push_back(glm::vec3(0.0f, 0.0f, 0.0f));
+        Uspoints.push_back(glm::vec3(15.84379f, 0.0f, 0.0f));
+        Uspoints.push_back(glm::vec3(17.95704f, -1.070687f, 0.0f));
+        Uspoints.push_back(glm::vec3(19.12045f, -1.070687f, 0.0f));
+        Uspoints.push_back(glm::vec3(21.21335f, 0.0f, 0.0f));
+        Uspoints.push_back(glm::vec3(30.0f, 0.0f, 0.0f));
+
+        Ustangents_in.push_back(glm::vec3(-1.0f, 0.0f, 0.0f));
+        Ustangents_in.push_back(glm::vec3(-1.0f, 0.0f, 0.0f));
+        Ustangents_in.push_back(glm::vec3(-0.9105752f, 0.03215781f, 8.08e-06f));
+        Ustangents_in.push_back(glm::vec3(-1.0f, 0.0f, 0.0f));
+        Ustangents_in.push_back(glm::vec3(-1.0f, 0.0f, 0.0f));
+        Ustangents_in.push_back(glm::vec3(-1.0f, 0.0f, 0.0f));
+
+        Ustangents_out.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
+        Ustangents_out.push_back(glm::vec3(0.62f, 0.0f, 0.0f));
+        Ustangents_out.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
+        Ustangents_out.push_back(glm::vec3(0.8466669f, 0.0f, 0.0f));
+        Ustangents_out.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
+        Ustangents_out.push_back(glm::vec3(1.0f, 0.0f, 0.0f));*/
 
         // Parameter initialization
         nav2_util::declare_parameter_if_not_declared(node_, name_ + ".interpolation_resolution", rclcpp::ParameterValue(0.1));
@@ -77,42 +66,60 @@ namespace cubic_spline_planner{
             name_.c_str());
     }
 
-    auto CubicSplinePlanner::createQuaternionMsgFromYaw(double yaw){
-        tf2::Quaternion q;
-        q.setRPY(0, 0, yaw);
-        return tf2::toMsg(q);
-    }
-
     nav_msgs::msg::Path CubicSplinePlanner::createPlan(const geometry_msgs::msg::PoseStamped & start, const geometry_msgs::msg::PoseStamped & goal)
     {
-        nav_msgs::msg::Path path, smoothedPath;
+        nav_msgs::msg::Path path;
+
+        if(!pathGenerated){
+            xs.insert(xs.begin(), start.pose.position.x);
+            xs.push_back(goal.pose.position.x);
+
+            ys.insert(ys.begin(), start.pose.position.y);
+            ys.push_back(goal.pose.position.y);
+
+            pathGenerated = true;
+        }
 
         path.poses.clear();
         path.header.stamp = node_->now();
         path.header.frame_id = global_frame_;
 
-        smoothedPath.header.stamp = node_->now();
-        smoothedPath.header.frame_id = global_frame_;
+        std::pair<std::vector<double>, std::vector<double>> interpolatedPoints = cubic_spline_planner::Spline::InterpolateXY(xs, ys, count);
 
-        geometry_msgs::msg::PoseStamped pose_;
-
-        cubic_spline_planner::CubicSplineInterpolator csi(pointsPerUnity, skipPoints, useEndConditions, useMiddleConditions);
-
-        for(UserPoses po : poseList){
-            pose_.header.stamp = node_->now();
-            pose_.header.frame_id = global_frame_;
-
-            pose_.pose.position.x = static_cast<double>(po.x);
-            pose_.pose.position.y = static_cast<double>(po.y);
-            pose_.pose.position.z = 0.0;
-            pose_.pose.orientation = createQuaternionMsgFromYaw(po.yaw);
-            path.poses.push_back(pose_);
+        for (size_t i = 0; i <= interpolatedPoints.first.size(); i++) {
+            //RCLCPP_INFO(node_->get_logger(), "[CubicSplinePlanner-Log] %f, %f", interpolatedPoints.first[i], interpolatedPoints.second[i]);
+            geometry_msgs::msg::PoseStamped pose;
+            pose.pose.position.x = interpolatedPoints.first[i];
+            pose.pose.position.y = interpolatedPoints.second[i];
+            pose.pose.position.z = 0.0;
+            pose.pose.orientation.x = 0.0;
+            pose.pose.orientation.y = 0.0;
+            pose.pose.orientation.z = 0.0;
+            pose.pose.orientation.w = 1.0;
+            pose.header.stamp = node_->now();
+            pose.header.frame_id = global_frame_;
+            path.poses.push_back(pose);
         }
 
-        csi.interpolatePath(path, smoothedPath);
+        /*cubic_spline_planner::Spline spline(Uspoints, Ustangents_in, Ustangents_out);
+            
+        for (float t = 0.0f; t <= 1.0f; t += 0.1f) {
+            glm::vec3 interpolated_point = spline.Interplolate(t);
+            geometry_msgs::msg::PoseStamped pose;
+            pose.pose.position.x = static_cast<double>(interpolated_point.x);
+            pose.pose.position.y = static_cast<double>(interpolated_point.y);
+            pose.pose.position.z = 0.0;
+            pose.pose.orientation.x = 0.0;
+            pose.pose.orientation.y = 0.0;
+            pose.pose.orientation.z = 0.0;
+            pose.pose.orientation.w = 1.0;
+            pose.header.stamp = node_->now();
+            pose.header.frame_id = global_frame_;
+            path.poses.push_back(pose);
+            //RCLCPP_INFO(node_->get_logger(), "[CubicSplinePlanner-Log] %f, %f, %f", interpolated_point.x, interpolated_point.y, interpolated_point.z);
+        }*/
 
-
-        return smoothedPath;
+        return path;
     }
 }
 
