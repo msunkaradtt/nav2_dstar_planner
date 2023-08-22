@@ -12,3 +12,10 @@ https://sci-hub.hkvisa.net/10.1109/aim.2003.1225546
 https://answers.ros.org/question/364561/tfcreatequaternionfromyaw-equivalent-in-ros2/
 
 -x', '22.0', '-y', '7.0', '-Y', '0.0
+
+        /*double currentTarget_x = xs.front();
+        double currentTarget_y = ys.front();
+        if((start.pose.position.x <= currentTarget_x && start.pose.position.y <= currentTarget_y) && (xs.size() > 1 && ys.size() > 1)){
+            xs.erase(xs.begin());
+            ys.erase(ys.begin());
+        }*/

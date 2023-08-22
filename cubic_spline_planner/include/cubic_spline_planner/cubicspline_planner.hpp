@@ -41,14 +41,17 @@ namespace cubic_spline_planner{
 
         double interpolation_resolution_;
 
-        /*std::vector<glm::vec3> Uspoints;
-        std::vector<glm::vec3> Ustangents_in;
-        std::vector<glm::vec3> Ustangents_out;*/
-
         std::vector<double> xs = {22.0, 20.0, 18.0, 16.0, 14.0};
         std::vector<double> ys = {7.0, 7.0, 7.0, 7.0, 7.0};
+
+        //std::vector<std::pair<double, double>> tangentsIn = {{0.0, 0.0}, {0.0, 0.0}, {0.0, 0.0}, {0.0, 0.0}, {0.0, 0.0}};
+        //std::vector<std::pair<double, double>> tangentsOut = {{0.0, 0.0}, {0.0, 0.0}, {0.0, 0.0}, {0.0, 0.0}, {0.0, 0.0}};
+
+        //std::vector<double> xs = {-2.0, -1.5, -1.0, -0.5, 0.0};
+        //std::vector<double> ys = {-0.44, -0.44, -0.40, -0.40, -0.44};
+
         int count;
-        bool pathGenerated;
+        bool startendAdd;
     };
 }
 
