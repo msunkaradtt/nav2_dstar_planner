@@ -42,7 +42,7 @@ namespace cubic_spline_planner{
         double interpolation_resolution_;
 
         std::vector<double> xs = {22.0, 20.0, 18.0, 16.0, 14.0};
-        std::vector<double> ys = {7.0, 7.0, 7.0, 7.0, 7.0};
+        std::vector<double> ys = {7.0, 7.0, 9.0, 9.0, 7.0};
 
         //std::vector<std::pair<double, double>> tangentsIn = {{0.0, 0.0}, {0.0, 0.0}, {0.0, 0.0}, {0.0, 0.0}, {0.0, 0.0}};
         //std::vector<std::pair<double, double>> tangentsOut = {{0.0, 0.0}, {0.0, 0.0}, {0.0, 0.0}, {0.0, 0.0}, {0.0, 0.0}};

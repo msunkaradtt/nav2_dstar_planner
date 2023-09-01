@@ -10,7 +10,7 @@
 
 namespace nav2_dstar_planner_v1{
     #define COST_OBS 253
-    #define OBSTACLE_FACTOR 0.9
+    #define OBSTACLE_FACTOR 0.2
 
     #define WINDOW_SIZE 200
 

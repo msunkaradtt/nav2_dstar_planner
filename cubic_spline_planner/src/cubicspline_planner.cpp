@@ -7,6 +7,8 @@
 
 #include "cubic_spline_planner/cubicspline_planner.hpp"
 
+#include "tf2/LinearMath/Quaternion.h"
+
 namespace cubic_spline_planner{
     void CubicSplinePlanner::configure(const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent, std::string name, std::shared_ptr<tf2_ros::Buffer> tf, std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros){
         node_ = parent.lock();
@@ -15,7 +17,7 @@ namespace cubic_spline_planner{
         costmap_ = costmap_ros->getCostmap();
         global_frame_ = costmap_ros->getGlobalFrameID();
 
-        count = 150;
+        count = 200;
 
         startendAdd = false;
 
@@ -72,7 +74,8 @@ namespace cubic_spline_planner{
         path.header.stamp = node_->now();
         path.header.frame_id = global_frame_;
 
-        std::pair<std::vector<double>, std::vector<double>> interpolatedPoints = cubic_spline_planner::Spline::InterpolateXY(xs, ys, count); //tangentsIn, tangentsOut,
+        /*std::pair<std::vector<double>, std::vector<double>> interpolatedPoints = cubic_spline_planner::Spline::InterpolateXY(xs, ys, count); //tangentsIn, tangentsOut,
+
         for (size_t i = 0; i <= interpolatedPoints.first.size(); i++) {
             //RCLCPP_INFO(node_->get_logger(), "[CubicSplinePlanner-Log] %f, %f", interpolatedPoints.first[i], interpolatedPoints.second[i]);
             geometry_msgs::msg::PoseStamped pose;
@@ -88,8 +91,30 @@ namespace cubic_spline_planner{
             pose.header.stamp = node_->now();
             pose.header.frame_id = global_frame_;
             path.poses.push_back(pose);
-        }
+        }*/
 
+        std::vector<cubic_spline_planner::InterpolatedPoint> interpolatedPoints = cubic_spline_planner::Spline::InterpolateXYWithYaw(xs, ys, count);
+        for (const auto& point : interpolatedPoints) {
+
+            geometry_msgs::msg::PoseStamped pose;
+            pose.pose.position.x = point.x;
+            pose.pose.position.y = point.y;
+            pose.pose.position.z = 0.0;
+
+            tf2::Quaternion _quater;
+            _quater.setRPY(0, 0, point.yaw);
+            _quater = _quater.normalize();
+
+            pose.pose.orientation.x = _quater.getX();
+            pose.pose.orientation.y = _quater.getY();
+            pose.pose.orientation.z = _quater.getZ();
+            pose.pose.orientation.w = _quater.getW();
+
+            pose.header.stamp = node_->now();
+            pose.header.frame_id = global_frame_;
+            path.poses.push_back(pose);
+        }
+        
         return path;
     }
 }
