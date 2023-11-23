@@ -54,7 +54,7 @@ namespace cubic_spline_planner{
         //RCLCPP_INFO(node_->get_logger(), "[CubicSplinePlanner-Log] %f, %f", start.pose.position.x, start.pose.position.y);
         //RCLCPP_INFO(node_->get_logger(), "[CubicSplinePlanner-Log] %f, %f", goal.pose.position.x, goal.pose.position.y);
 
-        if(!startendAdd){
+        /*if(!startendAdd){
             xs.insert(xs.begin(), start.pose.position.x);
             xs.push_back(goal.pose.position.x);
 
@@ -68,32 +68,13 @@ namespace cubic_spline_planner{
             ys.push_back(goal.pose.position.y);
 
             startendAdd = true;
-        }
+        }*/
 
         path.poses.clear();
         path.header.stamp = node_->now();
         path.header.frame_id = global_frame_;
 
-        /*std::pair<std::vector<double>, std::vector<double>> interpolatedPoints = cubic_spline_planner::Spline::InterpolateXY(xs, ys, count); //tangentsIn, tangentsOut,
-
-        for (size_t i = 0; i <= interpolatedPoints.first.size(); i++) {
-            //RCLCPP_INFO(node_->get_logger(), "[CubicSplinePlanner-Log] %f, %f", interpolatedPoints.first[i], interpolatedPoints.second[i]);
-            geometry_msgs::msg::PoseStamped pose;
-            pose.pose.position.x = interpolatedPoints.first[i];
-            pose.pose.position.y = interpolatedPoints.second[i];
-            pose.pose.position.z = 0.0;
-            
-            pose.pose.orientation.x = 0.0;
-            pose.pose.orientation.y = 0.0;
-            pose.pose.orientation.z = 0.0;
-            pose.pose.orientation.w = 1.0;
-
-            pose.header.stamp = node_->now();
-            pose.header.frame_id = global_frame_;
-            path.poses.push_back(pose);
-        }*/
-
-        std::vector<cubic_spline_planner::InterpolatedPoint> interpolatedPoints = cubic_spline_planner::Spline::InterpolateXYWithYaw(xs, ys, count);
+        std::vector<cubic_spline_planner::InterpolatedPoint> interpolatedPoints = cubic_spline_planner::Spline::InterpolateXYWithYaw(xs, ys, tangentsIn, tangentsOut, count);
         for (const auto& point : interpolatedPoints) {
 
             geometry_msgs::msg::PoseStamped pose;
