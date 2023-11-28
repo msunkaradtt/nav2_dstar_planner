@@ -47,3 +47,20 @@ https://answers.ros.org/question/364561/tfcreatequaternionfromyaw-equivalent-in-
       max_angular_accel: 3.2
       max_robot_pose_search_dist: 10.0
       use_interpolation: false
+
+
+
+
+                      /*RCLCPP_INFO(node_->get_logger(), "User-Log: %s", "####################S###################");
+                RCLCPP_INFO(node_->get_logger(), "User-Log: %s", rows[i][j].c_str());
+                RCLCPP_INFO(node_->get_logger(), "User-Log: %d", lookf.length());
+                RCLCPP_INFO(node_->get_logger(), "User-Log: %d", rows[i][j].length());
+                RCLCPP_INFO(node_->get_logger(), "User-Log: %d", lookf.compare(rows[i][j]));
+                RCLCPP_INFO(node_->get_logger(), "User-Log: %d", std::strcmp(rows[i][j].c_str(), lookf.c_str()));
+                RCLCPP_INFO(node_->get_logger(), "User-Log: %s", "####################E###################");*/
+
+
+                alias killgazebo="killall -9 gazebo & killall -9 gzserver  & killall -9 gzclient"
+
+
+                22.005094, 6.995558

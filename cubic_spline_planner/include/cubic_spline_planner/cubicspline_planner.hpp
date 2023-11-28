@@ -17,6 +17,14 @@
 
 #include "cubic_spline_planner/spline.hpp"
 
+#include <iostream>
+#include <fstream>
+#include <sstream>
+
+#include <filesystem>
+
+namespace fs = std::filesystem;
+
 
 namespace cubic_spline_planner{
     class CubicSplinePlanner : public nav2_core::GlobalPlanner{
@@ -33,19 +41,31 @@ namespace cubic_spline_planner{
         virtual nav_msgs::msg::Path createPlan(const geometry_msgs::msg::PoseStamped & start, const geometry_msgs::msg::PoseStamped & goal);
 
         private:
+        void unityros_temp(double startX, double startY);
+
+        private:
         std::shared_ptr<tf2_ros::Buffer> tf_;
         nav2_util::LifecycleNode::SharedPtr node_;
 
         nav2_costmap_2d::Costmap2D * costmap_;
         std::string global_frame_, name_;
 
-        double interpolation_resolution_;
+        std::string csv_file_;
 
-        std::vector<double> xs = {0.0, 14.4464263916016, 16.6706962585449, 19.515531539917, 21.2098083496094, 30};
+        /*std::vector<double> xs = {0.0, 14.4464263916016, 16.6706962585449, 19.515531539917, 21.2098083496094, 30};
         std::vector<double> ys = {0.0, 0.0, 1.52817690372467, 1.52817690372467, 0.0, 0.0};
 
         std::vector<std::pair<double, double>> tangentsIn = {{-1.0, 0.0}, {-1.0, 0.0}, {-0.910575151443481, -0.0321578122675419}, {-1.0, 0.0}, {-1.0, 0.0}, {-1.0, 0.0}};
-        std::vector<std::pair<double, double>> tangentsOut = {{1.0, 0.0}, {0.620000004768372, 0.0}, {1.0, 0.0}, {0.846666872501373, 0.0}, {1.0, 0.0}, {1.0, 0.0}};
+        std::vector<std::pair<double, double>> tangentsOut = {{1.0, 0.0}, {0.620000004768372, 0.0}, {1.0, 0.0}, {0.846666872501373, 0.0}, {1.0, 0.0}, {1.0, 0.0}};*/
+
+        std::vector<double> xs_t = {};
+        std::vector<double> ys_t = {};
+
+        std::vector<double> xs_prime = {};
+        std::vector<double> ys_prime = {};
+
+        std::vector<std::pair<double, double>> tangentsIn_t = {};
+        std::vector<std::pair<double, double>> tangentsOut_t = {};
 
         //std::vector<double> xs = {-2.0, -1.5, -1.0, -0.5, 0.0};
         //std::vector<double> ys = {-0.44, -0.44, -0.40, -0.40, -0.44};
