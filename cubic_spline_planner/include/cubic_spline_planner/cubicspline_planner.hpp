@@ -41,7 +41,7 @@ namespace cubic_spline_planner{
         virtual nav_msgs::msg::Path createPlan(const geometry_msgs::msg::PoseStamped & start, const geometry_msgs::msg::PoseStamped & goal);
 
         private:
-        void unityros_temp(double startX, double startY);
+        void scaleposx(double scaleVal);
 
         private:
         std::shared_ptr<tf2_ros::Buffer> tf_;
@@ -51,6 +51,7 @@ namespace cubic_spline_planner{
         std::string global_frame_, name_;
 
         std::string csv_file_;
+        double x_scale_;
 
         /*std::vector<double> xs = {0.0, 14.4464263916016, 16.6706962585449, 19.515531539917, 21.2098083496094, 30};
         std::vector<double> ys = {0.0, 0.0, 1.52817690372467, 1.52817690372467, 0.0, 0.0};
@@ -67,11 +68,17 @@ namespace cubic_spline_planner{
         std::vector<std::pair<double, double>> tangentsIn_t = {};
         std::vector<std::pair<double, double>> tangentsOut_t = {};
 
+        double startPointX;
+        double startPointY;
+
         //std::vector<double> xs = {-2.0, -1.5, -1.0, -0.5, 0.0};
         //std::vector<double> ys = {-0.44, -0.44, -0.40, -0.40, -0.44};
 
         int count;
         bool startendAdd;
+        bool diffState;
+
+        std::vector<double> diff;
     };
 }
 
