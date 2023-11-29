@@ -1,32 +1,47 @@
+#include <chrono>
 #include <cmath>
-#include <string>
+#include <iomanip>
+#include <iostream>
+#include <limits>
 #include <memory>
-#include <iterator> 
+#include <string>
+#include <vector>
 
 #include "nav2_util/node_utils.hpp"
 
 #include "cubic_spline_planner/cubicspline_planner.hpp"
 
+#include "builtin_interfaces/msg/duration.hpp"
+
 #include "tf2/LinearMath/Quaternion.h"
+
+using namespace std::chrono_literals;
+using namespace std::chrono;  // NOLINT
+using nav2_util::declare_parameter_if_not_declared;
+using rcl_interfaces::msg::ParameterType;
+using std::placeholders::_1;
 
 namespace cubic_spline_planner{
     void CubicSplinePlanner::configure(const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent, std::string name, std::shared_ptr<tf2_ros::Buffer> tf, std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros){
-        node_ = parent.lock();
+        node_ = parent;
+        auto node = parent.lock();
+        logger_ = node->get_logger();
         name_ = name;
         tf_ = tf;
         costmap_ = costmap_ros->getCostmap();
         global_frame_ = costmap_ros->getGlobalFrameID();
 
         // Parameter initialization
-        nav2_util::declare_parameter_if_not_declared(node_, name_ + ".csv_file", rclcpp::ParameterValue(""));
-        node_->get_parameter(name_ + ".csv_file", csv_file_);
-        nav2_util::declare_parameter_if_not_declared(node_, name_ + ".x_scale", rclcpp::ParameterValue(0.0));
-        node_->get_parameter(name_ + ".x_scale", x_scale_);
+        declare_parameter_if_not_declared(node, name_ + ".csv_file", rclcpp::ParameterValue(""));
+        node->get_parameter(name_ + ".csv_file", csv_file_);
+        declare_parameter_if_not_declared(node, name_ + ".x_scale", rclcpp::ParameterValue(0.0));
+        node->get_parameter(name_ + ".x_scale", x_scale_);
 
-        count = 500;
+        count = 200;
 
         startendAdd = false;
         diffState = false;
+        ticker = 0;
         diff = {};
 
         startPointX = 0.0;
@@ -38,7 +53,7 @@ namespace cubic_spline_planner{
         csvPath /= "data";
         csvPath /= csv_file_;
 
-        RCLCPP_INFO(node_->get_logger(), "User-Log: %s", csvPath.c_str());
+        RCLCPP_INFO(logger_, "User-Log: %s", csvPath.c_str());
 
         std::ifstream file(csvPath.c_str());
 
@@ -118,63 +133,57 @@ namespace cubic_spline_planner{
 
     void CubicSplinePlanner::cleanup()
     {
-        RCLCPP_INFO(node_->get_logger(), "User-Log: %s", "triggred!");
         RCLCPP_INFO(
-            node_->get_logger(), "CleaningUp plugin %s of type CubicSplinePlanner",
+            logger_, "CleaningUp plugin %s of type CubicSplinePlanner",
             name_.c_str());
     }
 
     void CubicSplinePlanner::activate()
     {
         RCLCPP_INFO(
-            node_->get_logger(), "Activating plugin %s of type CubicSplinePlanner",
+            logger_, "Activating plugin %s of type CubicSplinePlanner",
             name_.c_str());
+        
+        auto node = node_.lock();
+        dyn_params_handler_ = node->add_on_set_parameters_callback(std::bind(&CubicSplinePlanner::dynamicParametersCallback, this, _1));
     }
 
     void CubicSplinePlanner::deactivate()
     {
         RCLCPP_INFO(
-            node_->get_logger(), "Deactivating plugin %s of type CubicSplinePlanner",
+            logger_, "Deactivating plugin %s of type CubicSplinePlanner",
             name_.c_str());
+
+        dyn_params_handler_.reset();
     }
 
     nav_msgs::msg::Path CubicSplinePlanner::createPlan(const geometry_msgs::msg::PoseStamped & start, const geometry_msgs::msg::PoseStamped & goal)
     {
+        
         nav_msgs::msg::Path path, mainPath;
 
-        if(!startendAdd){
-            startPointX = start.pose.position.x;
-            startPointY = start.pose.position.y;
-            startendAdd = true;
+        auto node = node_.lock();
+
+        if((goalPointX != goal.pose.position.x) && (goalPointY != goal.pose.position.y)){
+            //RCLCPP_INFO(node_->get_logger(), "User-Log: %s", "Here_11111!");
+            goalPointX = goal.pose.position.x;
+            goalPointY = goal.pose.position.y;
+            diffState = false;
         }
 
-        //RCLCPP_INFO(node_->get_logger(), "User-Log: %f, %f", start.pose.position.x, start.pose.position.y);
-        //RCLCPP_INFO(node_->get_logger(), "[CubicSplinePlanner-Log] %f, %f", goal.pose.position.x, goal.pose.position.y);
-
-        /*if(!startendAdd){
-            xs.insert(xs.begin(), start.pose.position.x);
-            xs.push_back(goal.pose.position.x);
-
-            //tangentsIn.insert(tangentsIn.begin(), {0.0, 0.0});
-            //tangentsIn.push_back({0.0, 0.0});
-
-            //tangentsOut.insert(tangentsOut.begin(), {0.0, 0.0});
-            //tangentsOut.push_back({0.0, 0.0});
-
-            ys.insert(ys.begin(), start.pose.position.y);
-            ys.push_back(goal.pose.position.y);
-
-            startendAdd = true;
-        }*/
-
         path.poses.clear();
-        path.header.stamp = node_->now();
+        path.header.stamp = node->now();
         path.header.frame_id = global_frame_;
 
-        std::vector<cubic_spline_planner::InterpolatedPoint> interpolatedPoints = cubic_spline_planner::Spline::InterpolateXYWithYaw(xs_t, ys_t, tangentsIn_t, tangentsOut_t, count); //xs_prime, ys_prime //tangentsIn_t, tangentsOut_t
+        std::vector<cubic_spline_planner::InterpolatedPoint> interpolatedPoints = cubic_spline_planner::Spline::InterpolateXYWithYaw(xs_t, ys_t, tangentsIn_t, tangentsOut_t, count);
         
         
         if(!diffState){
+            //RCLCPP_INFO(node_->get_logger(), "User-Log: %s", "Here!");
+            ticker = 0;
+            startPointX = start.pose.position.x;
+            startPointY = start.pose.position.y;
+            diff.clear();
             diff.push_back(0.0);
             double startx = interpolatedPoints[0].x;
             for(int i = 1; i < interpolatedPoints.size(); i++){
@@ -201,12 +210,84 @@ namespace cubic_spline_planner{
             pose.pose.orientation.z = _quater.getZ();
             pose.pose.orientation.w = _quater.getW();
 
-            pose.header.stamp = node_->now();
+            pose.header.stamp = node->now();
             pose.header.frame_id = global_frame_;
             path.poses.push_back(pose);
         }
+
+        //RCLCPP_INFO(node_->get_logger(), "User-Log: %f", goal.pose.position.x);
         
+
+        if(((start.pose.position.x - path.poses[path.poses.size() - 1].pose.position.x) <= 2.0f)){
+            //RCLCPP_INFO(node_->get_logger(), "User-Log: %s", "triggred!");
+            ticker += 1;
+        }
+
+        double app_goal_x = path.poses[path.poses.size() - 1].pose.position.x;
+        double app_goal_y = path.poses[path.poses.size() - 1].pose.position.y;
+
+        if((ticker >= 2)){
+            //RCLCPP_INFO(node_->get_logger(), "User-Log: %s", "Final approch!");   
+            
+            int total_number_of_loop = std::hypot(app_goal_x - start.pose.position.x, app_goal_y - start.pose.position.y) / 0.1f;
+            //RCLCPP_INFO(node_->get_logger(), "User-Log: %d", total_number_of_loop);
+            double x_increment = (app_goal_x - start.pose.position.x) / total_number_of_loop;
+            double y_increment = (app_goal_y - start.pose.position.y) / total_number_of_loop;
+            for (int i = 0; i < total_number_of_loop; ++i) {
+                geometry_msgs::msg::PoseStamped pose;
+                pose.pose.position.x = start.pose.position.x + x_increment * i;
+                pose.pose.position.y = start.pose.position.y + y_increment * i;
+                pose.pose.position.z = 0.0;
+                pose.pose.orientation.x = 0.0;
+                pose.pose.orientation.y = 0.0;
+                pose.pose.orientation.z = 0.0;
+                pose.pose.orientation.w = 1.0;
+                pose.header.stamp = node->now();
+                pose.header.frame_id = global_frame_;
+                path.poses.push_back(pose);
+            }
+
+            if(total_number_of_loop <= 4){
+                path.poses.clear();
+                geometry_msgs::msg::PoseStamped pose;
+                pose.pose.position.x = app_goal_x;
+                pose.pose.position.y = app_goal_y;
+                pose.pose.position.z = 0.0;
+                pose.pose.orientation.x = 0.0;
+                pose.pose.orientation.y = 0.0;
+                pose.pose.orientation.z = 0.0;
+                pose.pose.orientation.w = 1.0;
+                pose.header.stamp = node->now();
+                pose.header.frame_id = global_frame_;
+                path.poses.push_back(pose);
+
+                //startendAdd = false;
+            }
+        }
+
+        //RCLCPP_INFO(node_->get_logger(), "User-Log: %s", "####################E###################");
         return path;
+    }
+
+    rcl_interfaces::msg::SetParametersResult CubicSplinePlanner::dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters){
+        rcl_interfaces::msg::SetParametersResult result;
+        for (auto parameter : parameters) {
+            const auto & type = parameter.get_type();
+            const auto & name = parameter.get_name();
+
+            if (type == ParameterType::PARAMETER_STRING) {
+                if (name == name_ + ".csv_file") {
+                    csv_file_ = parameter.as_string();
+                }   
+            } else if (type == ParameterType::PARAMETER_DOUBLE){
+                if (name == name_ + ".x_scale") {
+                    x_scale_ = parameter.as_double();
+                }
+            }
+        }
+
+        result.successful = true;
+        return result;
     }
 }
 

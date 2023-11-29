@@ -45,7 +45,9 @@ namespace cubic_spline_planner{
 
         private:
         std::shared_ptr<tf2_ros::Buffer> tf_;
-        nav2_util::LifecycleNode::SharedPtr node_;
+        rclcpp_lifecycle::LifecycleNode::WeakPtr node_;
+
+        rclcpp::Logger logger_{rclcpp::get_logger("CubicSplinePlanner")};
 
         nav2_costmap_2d::Costmap2D * costmap_;
         std::string global_frame_, name_;
@@ -71,14 +73,20 @@ namespace cubic_spline_planner{
         double startPointX;
         double startPointY;
 
-        //std::vector<double> xs = {-2.0, -1.5, -1.0, -0.5, 0.0};
-        //std::vector<double> ys = {-0.44, -0.44, -0.40, -0.40, -0.44};
+        double goalPointX = 0.0;
+        double goalPointY = 0.0;
 
         int count;
         bool startendAdd;
         bool diffState;
 
+        int ticker;
+
         std::vector<double> diff;
+
+        protected:
+        rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr dyn_params_handler_;
+        rcl_interfaces::msg::SetParametersResult dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters);
     };
 }
 
