@@ -54,6 +54,9 @@ namespace cubic_spline_planner{
 
         std::string csv_file_;
         double x_scale_;
+        int spline_points_;
+        int spline_range_;
+        int spline_smooth_iter_;
 
         /*std::vector<double> xs = {0.0, 14.4464263916016, 16.6706962585449, 19.515531539917, 21.2098083496094, 30};
         std::vector<double> ys = {0.0, 0.0, 1.52817690372467, 1.52817690372467, 0.0, 0.0};
@@ -81,6 +84,8 @@ namespace cubic_spline_planner{
         bool diffState;
 
         int ticker;
+
+        int smoothIterations = 0;
 
         std::vector<double> diff;
 

@@ -36,13 +36,21 @@ namespace cubic_spline_planner{
         node->get_parameter(name_ + ".csv_file", csv_file_);
         declare_parameter_if_not_declared(node, name_ + ".x_scale", rclcpp::ParameterValue(0.0));
         node->get_parameter(name_ + ".x_scale", x_scale_);
+        declare_parameter_if_not_declared(node, name_ + ".spline_points", rclcpp::ParameterValue(0));
+        node->get_parameter(name_ + ".spline_points", spline_points_);
+        declare_parameter_if_not_declared(node, name_ + ".spline_range", rclcpp::ParameterValue(0));
+        node->get_parameter(name_ + ".spline_range", spline_range_);
+        declare_parameter_if_not_declared(node, name_ + ".spline_smooth_iter", rclcpp::ParameterValue(0));
+        node->get_parameter(name_ + ".spline_smooth_iter", spline_smooth_iter_);
 
-        count = 200;
+        count = spline_points_;
 
         startendAdd = false;
         diffState = false;
         ticker = 0;
         diff = {};
+
+        smoothIterations = spline_smooth_iter_;
 
         startPointX = 0.0;
         startPointY = 0.0;
@@ -175,7 +183,7 @@ namespace cubic_spline_planner{
         path.header.stamp = node->now();
         path.header.frame_id = global_frame_;
 
-        std::vector<cubic_spline_planner::InterpolatedPoint> interpolatedPoints = cubic_spline_planner::Spline::InterpolateXYWithYaw(xs_t, ys_t, tangentsIn_t, tangentsOut_t, count);
+        std::vector<cubic_spline_planner::InterpolatedPoint> interpolatedPoints = cubic_spline_planner::Spline::InterpolateXYWithYawC2(xs_t, ys_t, tangentsIn_t, tangentsOut_t, count); //tangentsIn_t, tangentsOut_t
         
         
         if(!diffState){
@@ -192,6 +200,28 @@ namespace cubic_spline_planner{
             }
 
             diffState = true;
+        }
+
+        for(int iternation = 0; iternation < smoothIterations; ++iternation){
+            std::vector<InterpolatedPoint> smoothedPoints(interpolatedPoints.size());
+
+            for (size_t i = 0; i < interpolatedPoints.size(); ++i) {
+                int range = spline_range_;
+                double sumX = 0.0, sumY = 0.0, sumYaw = 0.0;
+
+                for (int j = -range; j <= range; ++j) {
+                    int index = static_cast<int>(i) + j;
+                    if (index >= 0 && index < static_cast<int>(interpolatedPoints.size())) {
+                        sumX += interpolatedPoints[index].x;
+                        sumY += interpolatedPoints[index].y;
+                        sumYaw += interpolatedPoints[index].yaw;
+                    }
+                }
+
+                smoothedPoints[i] = {sumX / (2 * range + 1), sumY / (2 * range + 1), sumYaw / (2 * range + 1)};
+            }
+
+            interpolatedPoints = std::move(smoothedPoints);
         }
 
         for (int j = 0; j < interpolatedPoints.size(); j++) {
@@ -215,11 +245,11 @@ namespace cubic_spline_planner{
             path.poses.push_back(pose);
         }
 
-        //RCLCPP_INFO(node_->get_logger(), "User-Log: %f", goal.pose.position.x);
-        
+        //RCLCPP_INFO(logger_, "User-Log: %f", start.pose.position.x);
+        //RCLCPP_INFO(logger_, "User-Log: %f", path.poses[path.poses.size() - 1].pose.position.x);
 
         if(((start.pose.position.x - path.poses[path.poses.size() - 1].pose.position.x) <= 2.0f)){
-            //RCLCPP_INFO(node_->get_logger(), "User-Log: %s", "triggred!");
+            //RCLCPP_INFO(logger_, "User-Log: %s", "triggred!");
             ticker += 1;
         }
 
@@ -227,10 +257,9 @@ namespace cubic_spline_planner{
         double app_goal_y = path.poses[path.poses.size() - 1].pose.position.y;
 
         if((ticker >= 2)){
-            //RCLCPP_INFO(node_->get_logger(), "User-Log: %s", "Final approch!");   
+            //RCLCPP_INFO(logger_, "User-Log: %s", "Final approch!");   
             
             int total_number_of_loop = std::hypot(app_goal_x - start.pose.position.x, app_goal_y - start.pose.position.y) / 0.1f;
-            //RCLCPP_INFO(node_->get_logger(), "User-Log: %d", total_number_of_loop);
             double x_increment = (app_goal_x - start.pose.position.x) / total_number_of_loop;
             double y_increment = (app_goal_y - start.pose.position.y) / total_number_of_loop;
             for (int i = 0; i < total_number_of_loop; ++i) {
@@ -260,12 +289,10 @@ namespace cubic_spline_planner{
                 pose.header.stamp = node->now();
                 pose.header.frame_id = global_frame_;
                 path.poses.push_back(pose);
-
-                //startendAdd = false;
             }
         }
 
-        //RCLCPP_INFO(node_->get_logger(), "User-Log: %s", "####################E###################");
+        //RCLCPP_INFO(logger_, "User-Log: %s", "####################E###################");
         return path;
     }
 
@@ -282,6 +309,14 @@ namespace cubic_spline_planner{
             } else if (type == ParameterType::PARAMETER_DOUBLE){
                 if (name == name_ + ".x_scale") {
                     x_scale_ = parameter.as_double();
+                }
+            } else if (type == ParameterType::PARAMETER_INTEGER){
+                if (name == name_ + ".spline_points") {
+                    spline_points_ = parameter.as_int();
+                } else if (name == name_ + ".spline_range"){
+                    spline_range_ = parameter.as_int();
+                } else if (name == name_ + ".spline_smooth_iter"){
+                    spline_smooth_iter_ = parameter.as_int();
                 }
             }
         }
