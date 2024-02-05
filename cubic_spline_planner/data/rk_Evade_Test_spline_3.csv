@@ -1,0 +1,24 @@
+﻿Settings
+Low Speed,High Speed,Break Distance,Accelerate Distance,Is Loaded
+1,2,3,1,False
+
+spline points
+6
+TangentIn.x,TangentIn.y,TangentIn.z,TangentOut.x,TangentOut.y,TangentOut.z,Position.x,Position.y,Position.z
+-5,0,0,5,0,0,0,0,0
+-5,0,0,5,0,15.8437919616699,0,0
+-5,0,0,5,0,0,17.9570350646973,1.07068717479706,0
+-5,0,0,5,0,0,19.1204452514648,1.07068729400635,0
+-5,0,0,5,0,0,21.2133464813232,0,0
+-5,0,0,5,0,0,30,0,0
+
+speed bumps
+2
+1,-0.0003652573,1
+2,0.001808167,4
+
+Recorded Threat Levels
+0
+year,month,day,hour,minute,second
+1,1,1,0,0,0
+

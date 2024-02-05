@@ -27,6 +27,22 @@ namespace fs = std::filesystem;
 
 
 namespace cubic_spline_planner{
+    struct Point
+    {
+        double x;
+        double y;
+        double dx_in;
+        double dy_in;
+        double dx_out;
+        double dy_out;
+    };
+
+    struct YawAngle
+    {
+        double angle;
+    };
+    
+    
     class CubicSplinePlanner : public nav2_core::GlobalPlanner{
         public:
         CubicSplinePlanner() = default;
@@ -58,11 +74,11 @@ namespace cubic_spline_planner{
         int spline_range_;
         int spline_smooth_iter_;
 
-        /*std::vector<double> xs = {0.0, 14.4464263916016, 16.6706962585449, 19.515531539917, 21.2098083496094, 30};
-        std::vector<double> ys = {0.0, 0.0, 1.52817690372467, 1.52817690372467, 0.0, 0.0};
+        std::vector<double> xs_te = {0.0, 0.5, 0.8, 1.1, 1.4, 1.7, 2, 2.3, 2.6, 2.9, 3.2, 3.5, 3.8, 4.1};
+        std::vector<double> ys_te = {0.0, 0.0, 0.0, 0.0, -1.2, -1.2, -1.2, -1.2, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 
-        std::vector<std::pair<double, double>> tangentsIn = {{-1.0, 0.0}, {-1.0, 0.0}, {-0.910575151443481, -0.0321578122675419}, {-1.0, 0.0}, {-1.0, 0.0}, {-1.0, 0.0}};
-        std::vector<std::pair<double, double>> tangentsOut = {{1.0, 0.0}, {0.620000004768372, 0.0}, {1.0, 0.0}, {0.846666872501373, 0.0}, {1.0, 0.0}, {1.0, 0.0}};*/
+        //std::vector<std::pair<double, double>> tangentsIn_te = {{-1.0, 0.0}, {-1.0, 0.0}, {-0.910575151443481, -0.0321578122675419}, {-1.0, 0.0}, {-1.0, 0.0}, {-1.0, 0.0}, {-1.0, 0.0}, {-1.0, 0.0}, {-1.0, 0.0}, {-1.0, 0.0}};
+        //std::vector<std::pair<double, double>> tangentsOut_te = {{1.0, 0.0}, {0.620000004768372, 0.0}, {1.0, 0.0}, {0.846666872501373, 0.0}, {1.0, 0.0}, {1.0, 0.0}, {1.0, 0.0}, {1.0, 0.0}, {1.0, 0.0}, {1.0, 0.0}};
 
         std::vector<double> xs_t = {};
         std::vector<double> ys_t = {};
@@ -92,6 +108,16 @@ namespace cubic_spline_planner{
         protected:
         rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr dyn_params_handler_;
         rcl_interfaces::msg::SetParametersResult dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters);
+
+
+        private:
+        std::vector<Point> points;
+        std::vector<YawAngle> yawAngles;
+
+        Point CubicHermiteSpline(const Point& p0, const Point& p1, double t);
+        YawAngle CalculateYawAngle(const Point& p0, const Point& p1);
+        std::vector<Point> GenerateCubicHermiteSpline(const std::vector<Point>& points, int numSegments, std::vector<YawAngle>& yawAngles);
+        void SmoothSpline(std::vector<Point>& points, int smoothingWindow);
     };
 }
 

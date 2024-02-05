@@ -1,6 +1,9 @@
 ros2 launch turtlebot3_gazebo turtlebot3_world.launch.py
 ros2 launch turtlebot3_navigation2 navigation2.launch.py use_sim_time:=True
 
+      x: -2.0
+      y: -0.5
+
 colcon build --cmake-args -DCMAKE_CXX_FLAGS="-w"
 
 ros2 launch igo_gazebo_sim sim_igo_real_warehouse.launch.py
